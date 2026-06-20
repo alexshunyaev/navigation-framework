@@ -9,7 +9,7 @@ from utils.pathfinding import calculate_heuristic, get_valid_neighbors, reconstr
 def find_path(grid: np.ndarray, start: Tuple[int, int],
               goal: Tuple[int, int]) -> List[Tuple[int, int]]:
     """
-    Find the optimal path using A* algorithm.
+    Find the optimal path using A* algorithm.   
 
     Args:
         grid: 2D numpy array (0 = free space, 1 = obstacle)
