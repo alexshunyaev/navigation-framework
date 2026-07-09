@@ -1,4 +1,7 @@
+import logging
 from typing import Tuple, Dict
+
+logger = logging.getLogger(__name__)
 
 
 def create_node(position: Tuple[int, int], g: float = float('inf'),
@@ -7,7 +10,7 @@ def create_node(position: Tuple[int, int], g: float = float('inf'),
     Create a node for the A* algorithm.
 
     Args:
-        position: (x, y) coordinates of the node
+        position: (row, col) grid coordinates of the node
         g: Cost from start to this node (default: infinity)
         h: Estimated cost from this node to goal (default: 0)
         parent: Parent node (default: None)

@@ -1,44 +1,57 @@
-import numpy as np
-from typing import List, Tuple, Dict
+import logging
 from math import sqrt
+from typing import List, Tuple, Dict
+
+import numpy as np
+
+logger = logging.getLogger(__name__)
 
 
 def calculate_heuristic(pos1: Tuple[int, int], pos2: Tuple[int, int]) -> float:
     """
-    Calculate the estimated distance between two points using Euclidean distance.
+    Euclidean distance between two grid cells, used as the A* heuristic.
+
+    Euclidean distance never overestimates the true 8-connected cost, so it is
+    admissible and keeps A* optimal.
     """
-    x1, y1 = pos1
-    x2, y2 = pos2
-    return sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+    r1, c1 = pos1
+    r2, c2 = pos2
+    return sqrt((r2 - r1) ** 2 + (c2 - c1) ** 2)
 
 
 def get_valid_neighbors(grid: np.ndarray, position: Tuple[int, int]) -> List[Tuple[int, int]]:
     """
-    Get all valid neighboring positions in the grid.
+    Get all valid neighbouring cells (8-connected) for a grid position.
 
     Args:
-        grid: 2D numpy array where 0 represents walkable cells and 1 represents obstacles
-        position: Current position (x, y)
+        grid: 2D numpy array where 0 represents walkable cells and 1 represents obstacles.
+        position: Current cell as (row, col).
 
     Returns:
-        List of valid neighboring positions
+        List of valid neighbouring cells as (row, col) tuples.
     """
-    x, y = position
+    row, col = position
     rows, cols = grid.shape
 
-    # All possible moves (including diagonals)
-    possible_moves = [
-        (x + 1, y), (x - 1, y),  # Right, Left
-        (x, y + 1), (x, y - 1),  # Up, Down
-        (x + 1, y + 1), (x - 1, y - 1),  # Diagonal moves
-        (x + 1, y - 1), (x - 1, y + 1)
-    ]
+    def in_bounds_free(r: int, c: int) -> bool:
+        """True if cell (r, c) is inside the grid and not an obstacle."""
+        return 0 <= r < rows and 0 <= c < cols and grid[r, c] == 0
 
-    return [
-        (nx, ny) for nx, ny in possible_moves
-        if 0 <= nx < rows and 0 <= ny < cols  # Within grid bounds
-           and grid[nx, ny] == 0  # Not an obstacle
+    # Orthogonal moves
+    orthogonal_moves = [(row + 1, col), (row - 1, col), (row, col + 1), (row, col - 1)]
+    neighbors = [(r, c) for r, c in orthogonal_moves if in_bounds_free(r, c)]
+
+    # Diagonal moves: only allowed if both flanking orthogonal cells are free,
+    # otherwise the path would cut through the corner of an obstacle.
+    diagonal_moves = [
+        (row + 1, col + 1), (row - 1, col - 1),
+        (row + 1, col - 1), (row - 1, col + 1),
     ]
+    for r, c in diagonal_moves:
+        if in_bounds_free(r, c) and in_bounds_free(r, col) and in_bounds_free(row, c):
+            neighbors.append((r, c))
+
+    return neighbors
 
 
 def reconstruct_path(goal_node: Dict) -> List[Tuple[int, int]]:

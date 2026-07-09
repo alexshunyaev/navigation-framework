@@ -1,9 +1,13 @@
 import heapq
-import numpy as np
+import logging
 from typing import Tuple, List
+
+import numpy as np
 
 from utils.nodes import create_node
 from utils.pathfinding import calculate_heuristic, get_valid_neighbors, reconstruct_path
+
+logger = logging.getLogger(__name__)
 
 
 def find_path(grid: np.ndarray, start: Tuple[int, int],
@@ -13,11 +17,11 @@ def find_path(grid: np.ndarray, start: Tuple[int, int],
 
     Args:
         grid: 2D numpy array (0 = free space, 1 = obstacle)
-        start: Starting position (x, y)
-        goal: Goal position (x, y)
+        start: Starting cell as (row, col)
+        goal: Goal cell as (row, col)
 
     Returns:
-        List of positions representing the optimal path
+        List of (row, col) cells from start to goal, or [] if no path exists.
     """
     # Initialize start node
     start_node = create_node(
@@ -38,7 +42,9 @@ def find_path(grid: np.ndarray, start: Tuple[int, int],
 
         # Check if we've reached the goal
         if current_pos == goal:
-            return reconstruct_path(current_node)
+            result = reconstruct_path(current_node)
+            logger.info("Path found: %d waypoints from %s to %s.", len(result), start, goal)
+            return result
 
         closed_set.add(current_pos)
 
@@ -68,4 +74,5 @@ def find_path(grid: np.ndarray, start: Tuple[int, int],
                 neighbor['f'] = tentative_g + neighbor['h']
                 neighbor['parent'] = current_node
 
-    return []  # No path found
+    logger.warning("No path found from %s to %s.", start, goal)
+    return []

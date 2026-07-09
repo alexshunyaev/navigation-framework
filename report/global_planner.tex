@@ -1,34 +1,22 @@
-\section{Global Planning: A*}
+\section{Global Planning Method: A*}
+\label{sec:global}
 
-\subsection{Why use A* for global planning?}
-I have chosen the $A^*$ algorithm because it is simple yet effective for our purposes.
-It is faster than Dijkstra's algorithm because it also has a heuristic function which allows us to
-use the most promising node locations.
+I use \textbf{A*} for global planning: like Dijkstra it is complete and (with an
+admissible heuristic) optimal, but its goal-directed heuristic expands far fewer nodes,
+making it the natural choice on an occupancy grid.
 
-\subsection{Heuristic function $h(n)$}
-The heuristic function $h(n)$ provides an estimated cost from the current node to the goal node,
-acting as the algorithm's "informed guess" about the remaining path. 
-
-Mathematically, for any given node $n$, the heuristic estimate must satisfy the condition:
+Each node $n$ is scored by
 \begin{equation}
-    h(n) \leq h^*(n)
+    f(n) = g(n) + h(n),
 \end{equation}
-where $h^*(n)$ is the actual cost to the goal, making it admissible by never overestimating the true cost.
+where $g(n)$ is the actual cost from the start and $h(n)$ is the estimated cost to the
+goal. I use the Euclidean distance as $h$, which is admissible because it never
+overestimates the true remaining cost, $h(n)\le h^*(n)$ --- so A* returns a
+shortest path. The search expands the open-list node of lowest $f$, relaxing 8-connected
+neighbours; diagonal moves are allowed only when both flanking orthogonal cells are free,
+preventing paths that cut through obstacle corners.
 
-\subsection{Total estimated cost $f(n)$}
-The total estimated cost $f(n)$ is the cornerstone of the $A^*$ algorithm's decision-making process, combining both the actual
-path cost and the heuristic estimate to evaluate each node's potential.
-
-For any node $n$, this cost is calculated as:
-\begin{equation}
-    f(n) = g(n) + h(n)
-\end{equation}
-
-Where:
-\begin{itemize}
-    \item $g(n)$ represents the actual cost from the start to the current node.
-    \item $h(n)$ represents the estimated cost from the current node to the goal. 
-\end{itemize}
-
-The algorithm uses this combined value to strategically choose which node to explore next,
-always selecting the node with the lowest $f(n)$ value from the open list, thus ensuring an optimal balance between known costs and estimated remaining distances.
+A* runs on the inflated planning grid (Section~3), so the resulting waypoint list is a
+complete, collision-free, and, what is more important, drivable reference for the local planner. Because the
+search covers the whole map, it provides the global guidance that lets the system escape
+the dead-end traps a local method cannot.

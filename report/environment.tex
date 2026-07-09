@@ -1,0 +1,26 @@
+\section{Environment Representation}
+
+\paragraph{Binary occupancy grid.} The world is an $N\times N$ grid $G$ with
+$G(r,c)\in\{0,1\}$ (0 = free, 1 = obstacle), generated randomly at a chosen obstacle
+density with guaranteed-free start and goal cells.
+
+\paragraph{Probabilistic risk field} A binary grid treats every cell as
+certainly free or certainly blocked, which ignores sensor uncertainty and lets a plan
+graze obstacle corners. I instead convolve $G$ with a 2D Gaussian kernel $K_\sigma$ to
+obtain a continuous risk field $\rho(r,c)\in[0,1]$:
+\begin{equation}
+    \rho = \mathrm{clip}\!\big(\max(G * K_\sigma,\; G),\; 0,\; 1\big),
+    \qquad K_\sigma(r,c)=\tfrac{1}{2\pi\sigma^2}\exp\!\big(-\tfrac{r^2+c^2}{2\sigma^2}\big).
+\end{equation}
+Risk decays smoothly with distance from obstacles ($\sigma=0.8$ cells), so the local
+planner can reason about how safely a trajectory passes, not merely whether it
+collides. Continuous positions are queried by bilinear interpolation of $\rho$.
+
+\paragraph{Inflated planning grid, and why representation matters.} The representation a
+planner uses directly determines plan quality. The global and local layers must agree on
+what is traversable: if A* searches the raw grid but the local planner rejects any cell
+with $\rho\ge\rho_\text{thresh}$, A* returns corridors the robot considers lethal and it
+stalls. I therefore derive an \emph{inflated} planning grid, $G_\text{inf}=[\rho\ge
+\rho_\text{thresh}]$, and run A* on it, so the global route only visits cells the local
+planner also deems safe. This single alignment choice is what makes the two layers
+cooperate rather than fight.

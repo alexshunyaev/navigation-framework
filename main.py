@@ -1,103 +1,75 @@
-import random
-import numpy as np
-
-random.seed(42)
-np.random.seed(42)
+import logging
+import os
 
 from src.a_star import find_path
-from src.dwa import DWAConfig, dwa_control, motion
+from src.dwa import DWAConfig
+from src.mppi import MPPIConfig, MPPIPlanner
+from src.navigation import run_navigation
+from src.prob_map import ProbabilisticMap
+from utils.map_generator import generate_random_map
 from utils.visualisation import visualize_path
 
+logger = logging.getLogger(__name__)
 
-def generate_random_map(size=20, obstacle_prob=0.3):
-    """Generates a random map with obstacles and valid start/goal positions."""
-    grid = np.zeros((size, size))
-    for r in range(size):
-        for c in range(size):
-            if random.random() < obstacle_prob:
-                grid[r, c] = 1
-
-    def get_random_free_pos():
-        while True:
-            r = random.randint(0, size - 1)
-            c = random.randint(0, size - 1)
-            if grid[r, c] == 0:
-                return (r, c)
-
-    start_pos = get_random_free_pos()
-    goal_pos = get_random_free_pos()
-    while goal_pos == start_pos:
-        goal_pos = get_random_free_pos()
-
-    return grid, start_pos, goal_pos
+# MPPI is the operational local planner. "dwa" is retained only as a comparison
+# baseline (see experiments/benchmark.py and the report's failure-case analysis);
+# it is not used to drive the robot in normal operation.
+PLANNER = "mppi"
 
 
-def main():
-    # Create a random grid with obstacles
-    grid, start_pos, goal_pos = generate_random_map(size=20, obstacle_prob=0.2)
+def main() -> None:
+    """
+    Run the full navigation pipeline once and save a result figure.
 
-    print(f"Start: {start_pos}, Goal: {goal_pos}")
+    Generates a random map, builds the probabilistic risk field, plans a global
+    A* path on the inflated planning grid, drives the robot along it with the
+    configured local planner (MPPI by default), and visualises the outcome.
+    """
+    os.makedirs("experiments", exist_ok=True)
 
-    # 1. Global Planning using A*
-    print("Running A* Global Planner...")
-    path = find_path(grid, start_pos, goal_pos)
-    if not path:
-        print("No global path found!")
+    # Retry map generation until start/goal are free on the *inflated* planning
+    # grid and A* finds a path there — this guarantees the global path only uses
+    # corridors the local planner also considers safe.
+    for attempt in range(50):
+        grid, start_pos, goal_pos = generate_random_map(size=20, obstacle_prob=0.3)
+        prob_map = ProbabilisticMap(grid, sigma=0.8, collision_threshold=0.5)
+        planning_grid = prob_map.planning_grid()
+
+        if planning_grid[start_pos] == 1 or planning_grid[goal_pos] == 1:
+            continue  # start/goal fall inside the inflated obstacle margin
+        path = find_path(planning_grid, start_pos, goal_pos)
+        if path:
+            break
+    else:
+        logger.error("Could not generate a solvable map after 50 attempts. Aborting.")
         return
 
-    print(f"Global path found with {len(path)} steps!")
+    logger.info("Probabilistic map built (sigma=0.8, threshold=0.5); A* on inflated grid.")
 
-    # 2. Extract obstacles for Local Planner
-    ob = np.argwhere(grid == 1)
-
-    # 3. Setup DWA
-    print("Starting DWA Local Planner...")
-    config = DWAConfig()
-
-    # Initial state [r, c, theta, v, omega]
-    initial_theta = 0.0
-    if len(path) > 1:
-        initial_theta = np.arctan2(path[1][1] - path[0][1], path[1][0] - path[0][0])
-
-    x = np.array([float(start_pos[0]), float(start_pos[1]), initial_theta, 0.0, 0.0])
-    trajectory_history = np.array([x])
-
-    waypoint_idx = 1 if len(path) > 1 else 0
-
-    for i in range(2000):  # max iterations
-        goal_waypoint = path[waypoint_idx]
-
-        # Check if we reached the current waypoint (relaxed radius to avoid orbiting)
-        dist_to_waypoint = np.hypot(x[0] - goal_waypoint[0], x[1] - goal_waypoint[1])
-        if dist_to_waypoint <= 0.8:
-            if waypoint_idx < len(path) - 1:
-                waypoint_idx += 1
-                goal_waypoint = path[waypoint_idx]
-            else:
-                print("Goal Reached successfully!")
-                break
-
-        # Run DWA to get control input
-        u, _ = dwa_control(x, config, goal_waypoint, ob)
-
-        # Apply control to simulate motion
-        x = motion(x, u, config.dt)
-        trajectory_history = np.vstack((trajectory_history, x))
-
-        # Check collision for safety
-        if ob.size > 0:
-            distances = np.hypot(x[0] - ob[:, 0], x[1] - ob[:, 1])
-            if np.min(distances) <= config.robot_radius / 2.0:
-                print("Collision Detected! Navigation failed.")
-                break
+    if PLANNER == "mppi":
+        # MPPI carries its own MPPIConfig; the DWAConfig here only supplies the
+        # integration step (config.dt) used by the navigation loop's motion model.
+        config = DWAConfig()
+        planner = MPPIPlanner(MPPIConfig(), seed=0)
+        logger.info("Using MPPI local planner (%d samples, horizon %d).",
+                    planner.config.num_samples, planner.config.horizon)
     else:
-        print("Max iterations reached. Did not reach goal.")
+        config = DWAConfig(smoothness_cost_weight=1.0, path_deviation_cost_weight=0.5)
+        planner = None  # defaults to dwa_control
+        logger.info("Using DWA local planner.")
 
-    print(f"Simulation finished. Actual trajectory length: {len(trajectory_history)} steps.")
+    trajectory, _ = run_navigation(
+        grid, start_pos, goal_pos, config, prob_map, path, planner=planner,
+    )
 
-    # Visualize the result
-    visualize_path(grid, path, trajectory_history)
+    visualize_path(grid, path, trajectory, prob_map=prob_map,
+                   save_path="experiments/dwa_result.png")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+        datefmt="%H:%M:%S",
+    )
     main()

@@ -1,0 +1,21 @@
+\section{Optional Extensions}
+
+I implemented two of the optional extensions, both of which feed directly into the MPPI cost
+function.
+
+\paragraph{Probabilistic Mapping.} The Gaussian risk field replaces
+the binary obstacle test with a continuous one. In the planner the discrete ``infinite cost
+inside the safety radius'' rule becomes a smooth penalty on the risk along a trajectory, with
+a hard cutoff only at $\rho\ge\rho_\text{thresh}=0.5$. This gives the optimiser a gradient
+that steers it away from obstacles \emph{before} a collision is imminent. Concretely, the
+obstacle term averages a soft risk penalty over the horizon and adds a large finite penalty
+for any sample that breaches the threshold, so guidance never freezes the robot yet true
+collisions are ruled out.
+
+\paragraph{Multi-Objective Optimization.} I add two objectives to the cost: a
+\emph{smoothness} term $c_\text{smooth}=\frac1T\sum_t|\omega_t|$ that penalises jerky turning,
+and a \emph{path-deviation} term $c_\text{dev}=\min_i\|\tau_T-p_i\|$ that keeps the trajectory
+endpoint near the global path $\mathcal{P}$. The planner therefore optimises several criteria
+at once --- progress, safety, smoothness and path consistency --- which is what exposes the
+trade-offs discussed in Section~5. Both terms are tunable independently through the planner
+configuration, so their relative influence can be studied without changing the algorithm.

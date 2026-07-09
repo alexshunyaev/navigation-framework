@@ -1,18 +1,31 @@
-\documentclass{article}
+\documentclass[12pt]{article}
 \usepackage[utf8]{inputenc}
+\usepackage[margin=2cm]{geometry}
 \usepackage{amsmath}
 \usepackage{graphicx}
+\usepackage{booktabs}
 \usepackage{hyperref}
 
-\title{Navigation Framework Report}
-\author{Navigation Framework}
-\date{\today}
+\setlength{\parskip}{2pt}
+\setlength{\parindent}{0pt}
+
+\title{\vspace{-1.5em}Technische Hochschule Deggendorf \\[0.4em] \large AI Programming}
+\author{Alexander Shunyaev \\ Matriculation Number: 12305756}
+\date{Summer Semester 2026}
 
 \begin{document}
 
 \maketitle
+\vspace{-2em}
 
+\input{problem}
+\input{architecture}
+\input{environment}
 \input{global_planner}
 \input{local_planner}
+\input{extensions}
+\input{results}
+\input{discussion}
+\input{reflection}
 
 \end{document}

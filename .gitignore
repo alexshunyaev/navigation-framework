@@ -194,6 +194,20 @@ cython_debug/
 #   Learn more at https://abstra.io/docs
 .abstra/
 
+# LaTeX build output. Keep the report sources (report/*.tex) and the committed
+# final PDF (report/report.pdf); ignore only the throwaway compile artifacts.
+/out/
+/auxil/
+report/*.aux
+report/*.log
+report/*.out
+report/*.toc
+report/*.synctex.gz
+report/*.fls
+report/*.fdb_latexmk
+report/*.bbl
+report/*.blg
+
 # Visual Studio Code
 #   Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore 
 #   that can be found at https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore

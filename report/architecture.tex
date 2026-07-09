@@ -1,0 +1,25 @@
+\section{System Architecture}
+
+The system is a modular pipeline; each stage is an independent Python module so components (e.g.\ the local optimiser) can be swapped without
+touching the rest.
+
+\begin{enumerate}
+    \item \textbf{Map generation} (\texttt{utils/map\_generator.py}) --- produces a random
+    binary occupancy grid with free start/goal cells.
+    \item \textbf{Probabilistic map} (\texttt{src/prob\_map.py}) --- converts the grid into a
+    continuous Gaussian risk field and derives an inflated planning grid.
+    \item \textbf{Global planner} (\texttt{src/a\_star.py}) --- A* search on the inflated grid
+    returns a waypoint path.
+    \item \textbf{Local planner} (\texttt{src/mppi.py}, primary; \texttt{src/dwa.py} as a
+    baseline) --- at each control step, evaluates candidate motions against a cost function
+    and returns a velocity command.
+    \item \textbf{Navigation loop} (\texttt{src/navigation.py}) --- drives the robot with a
+    pure-pursuit look-ahead target along the path, integrating the motion model until the
+    goal is reached.
+    \item \textbf{Visualisation} (\texttt{utils/visualisation.py}) --- renders the grid, risk
+    field, global path and executed trajectory.
+\end{enumerate}
+
+MPPI is the operational planner; the \texttt{PLANNER} flag in \texttt{main.py} can switch to
+the DWA baseline for comparison. Both expose the same call signature, so the navigation loop
+is agnostic to which one runs.

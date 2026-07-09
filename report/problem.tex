@@ -1,0 +1,24 @@
+\section{Problem Description}
+
+I build a navigation framework that moves a mobile robot from a start location to a
+goal location in a partially known 2D environment while avoiding obstacles
+and respecting the robot's motion constraints. The robot is a differential-drive
+platform: it cannot translate sideways and its linear and angular velocities are
+bounded and acceleration-limited, so a valid plan must be more than a sequence of
+free cells, it must be drivable.
+
+The framework combines two complementary layers. A global planner searches the
+whole environment for a complete, collision-free route, providing long-term guidance.
+A local planner/optimiser then tracks that route while continuously scoring
+candidate motions against the robot's dynamics and nearby obstacles.
+
+\paragraph{Why global planning is necessary, and why local planning alone is not.}
+A local planner only looks a short distance ahead, so it always tries to move straight
+toward the goal. This works in open space but gets stuck when the goal is hidden behind an
+obstacle. The clearest example is a dead end: if the robot drives into a U-shaped
+wall, the goal is on the far side of it, so every ``move closer'' step just pushes the
+robot into the wall. Escaping would mean first moving \emph{away} from the goal, which a
+local planner never chooses --- so it stays trapped. A global planner avoids this by
+looking at the whole map at once and routing around such traps before the robot even
+starts. The two layers are complementary: the global planner decides which way to
+go, the local planner how to drive there smoothly.
