@@ -8,21 +8,23 @@ global competence --- completeness and optimality over the map, so the robot nev
 itself in a dead end. \textbf{Optimisation} (DWA/MPPI) supplies local competence ---
 continuously choosing dynamically feasible motions that trade off progress, safety and
 smoothness against the live obstacle geometry. \textbf{Representation} (the probabilistic
-risk field and the inflated planning grid) is what lets the planners cooperate: it turns a binary world into a graded one and guarantees the two layers agree on what is
-drivable. Intelligent behaviour comes from this combination; removing any one part
-degrades the whole (no search $\Rightarrow$ dead ends; no optimisation $\Rightarrow$
-undrivable or longer paths; no shared representation $\Rightarrow$ the layers fight).
+risk field and the inflated planning grid) lets the two cooperate: it turns a binary world
+into a graded one and guarantees both layers agree on what is drivable. Remove any one and the whole degrades: no search gives dead ends, no optimisation
+undrivable paths, no shared representation two layers that fight.
 
-\paragraph{Adaptation.} The system is reactive. The local optimiser re-solves
-its cost minimisation at every control step, and MPPI's receding-horizon warm start carries
-information forward in time, so the robot adjusts its command to whatever obstacles are
-nearby rather than blindly replaying the global path.
+\paragraph{Reasoning about the future.} Intelligence here is not a reflex to the current
+instant. MPPI optimises a whole control sequence over a short horizon, scoring where each
+candidate \emph{leads} rather than how it looks now --- so the robot commits to compound
+manoeuvres (``turn, then go straight'') and accepts a momentarily worse state to reach a
+better one, which a greedy step cannot do.
 
-\paragraph{Limitations and improvements.} The environment is static and fully observed at
-plan time; dynamic obstacles and true partial observability are not yet handled. DWA needs
-manual weight tuning and remains freeze-prone. Natural improvements are: online replanning
-of the global path when the map changes, a sampling-based global planner (RRT*) for
-continuous spaces, learning the cost weights instead of hand-tuning, and
-adding an explicit recovery behaviour. Consistent with the project's emphasis, the value
-here is less the specific algorithms than a clear account of why each is needed and
-how they combine into intelligent navigation.
+\paragraph{Balancing competing objectives.} The robot never optimises a single quantity;
+every motion is judged by a weighted trade-off of progress, clearance, speed, smoothness and
+path fidelity. Behaving well means \emph{negotiating} these goals when they conflict ---
+closer to judgement than to a fixed rule.
+
+\paragraph{Adaptation and generality.} The system is reactive: it re-solves its cost
+minimisation every control step, with MPPI's receding-horizon warm start carrying
+information forward, so the robot answers the obstacles in front of it. Nothing is
+hand-crafted for a specific map, so the same pipeline solves arbitrary random worlds ---
+competence in the method, not a memorised solution.

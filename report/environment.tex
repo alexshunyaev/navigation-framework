@@ -20,7 +20,7 @@ collides. Continuous positions are queried by bilinear interpolation of $\rho$.
 planner uses directly determines plan quality. The global and local layers must agree on
 what is traversable: if A* searches the raw grid but the local planner rejects any cell
 with $\rho\ge\rho_\text{thresh}$, A* returns corridors the robot considers lethal and it
-stalls. I therefore derive an \emph{inflated} planning grid, $G_\text{inf}=[\rho\ge
+stalls. I therefore derive an inflated planning grid, $G_\text{inf}=[\rho\ge
 \rho_\text{thresh}]$, and run A* on it, so the global route only visits cells the local
 planner also deems safe. This single alignment choice is what makes the two layers
 cooperate rather than fight.

@@ -28,3 +28,9 @@ samples trades compute for a higher success rate. In these 32% there are some pa
 vs.\ efficiency: cautious weightings are safe but slow and freeze-prone, aggressive
 weightings are fast but graze obstacles. The probabilistic field mitigates this by turning
 a hard constraint into a smooth gradient, but the weights still require fine-tuning.
+
+\paragraph{Limitations and future work.} The environment is static and fully observed, so
+dynamic obstacles and true partial observability are not yet handled, and DWA still needs
+manual weight tuning and stays freeze-prone. Natural next steps: online replanning when the
+map changes, a sampling-based global planner (RRT*) for continuous spaces, learning the cost
+weights instead of hand-tuning, and an explicit recovery behaviour for the frozen-robot state.
