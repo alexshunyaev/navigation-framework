@@ -3,11 +3,6 @@
 Building the system surfaced several instructive failure modes, most of them in the local
 layer.
 
-\paragraph{Dead ends (local planning alone).} As argued in Section~1, a local optimiser
-walks into U-shaped obstacles because escaping requires temporarily increasing the
-goal distance. My global A* layer removes this failure by planning a complete route the
-local planner only has to track.
-
 \paragraph{DWA rotate-in-place / frozen robot.} DWA fails structurally in clutter (0/25).
 From a standstill the acceleration-limited window admits only near-zero speeds, so a
 forward candidate barely displaces the robot over the horizon; the progress terms cannot
@@ -22,7 +17,7 @@ cell as infinite cost, which near corners can eliminate every forward option.
 full control sequences and softly averaging over rollouts, reaching 68\% of goals. Its
 remaining 32\% of failures occur in the tightest passages, where the sampling distribution
 rarely proposes the narrow feasible manoeuvre within the horizon; a longer horizon or more
-samples trades compute for a higher success rate. In these 32% there are some paths which are simply cannot be executed because of the map layout.
+samples trades compute for a higher success rate. In these 32\% there are some paths which are simply cannot be executed because of the map layout.
 
 \paragraph{Trade-offs.} Across both planners the recurring tension is speed vs.\ safety
 vs.\ efficiency: cautious weightings are safe but slow and freeze-prone, aggressive
