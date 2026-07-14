@@ -179,7 +179,7 @@ escapes exactly those traps, which is why it is the primary method.
   (Option A).
 
 A full write-up — problem framing, architecture, method details, experiments, and
-failure-case analysis — is in the **[technical report](report/report.pdf)**
+failure-case analysis — is in the **[technical report](report/main.pdf)**
 (LaTeX sources under `report/`).
 
 ---
